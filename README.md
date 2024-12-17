@@ -73,7 +73,7 @@ A documentação completa está disponível na [Wiki do projeto](link-para-wiki)
 - [ ] Desenvolvimento das tarefas base
 - [ ] Criação dos workflows básicos
 
-[Ver roadmap completo](link-para-roadmap)
+[Ver roadmap completo](ROADMAP.md)
 
 ## 🤝 Contribuindo
 Contribuições são sempre bem-vindas! Por favor, leia o [guia de contribuição](CONTRIBUTING.md) para saber como contribuir para o projeto.
