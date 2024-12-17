@@ -82,7 +82,7 @@ Contribuições são sempre bem-vindas! Por favor, leia o [guia de contribuiçã
 Encontrou um bug? Por favor, abra uma [issue](link-para-issues) com os detalhes do problema encontrado.
 
 ## 📄 Licença
-Este projeto está licenciado sob a [MIT License](LICENSE).
+Este projeto está licenciado sob a [MIT License](LICENSE.md).
 
 ## ✉️ Contato
 Reginaldo Santos - [penhall@gmail.com](mailto:penhall@gmail.com)
