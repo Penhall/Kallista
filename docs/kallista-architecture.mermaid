@@ -1,0 +1,30 @@
+graph TB
+    K[Kallista Core] --> INT[Integrations]
+    K --> AGT[Agents]
+    K --> TOOL[Tools]
+    K --> WKF[Workflows]
+    
+    INT --> INT1[Visual Studio]
+    INT --> INT2[Azure DevOps]
+    INT --> INT3[GitHub]
+    INT --> INT4[NuGet]
+    
+    TOOL --> T1[Code Tools]
+    TOOL --> T2[Database Tools]
+    TOOL --> T3[Security Tools]
+    TOOL --> T4[Testing Tools]
+    TOOL --> T5[UI/UX Tools]
+    
+    WKF --> W1[Process Orchestrator]
+    WKF --> W2[Task Scheduler]
+    WKF --> W3[Workflow Manager]
+    
+    AGT --> A1[Core Agents]
+    AGT --> A2[Specialized Agents]
+    
+    classDef implemented fill:#90EE90
+    classDef inProgress fill:#FFD700
+    classDef planned fill:#FF9999
+    
+    class K,AGT,TOOL,WKF implemented
+    class INT inProgress

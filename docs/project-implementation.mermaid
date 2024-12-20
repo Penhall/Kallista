@@ -1,0 +1,27 @@
+gantt
+    title Progresso de Implementação do Kallista
+    dateFormat YYYY-MM-DD
+    
+    section Fase 1
+    Setup Ambiente           :done, f1_1, 2024-12-01, 3d
+    State Manager           :done, f1_2, after f1_1, 2d
+    Memory Manager         :done, f1_3, after f1_2, 2d
+    Context Manager        :done, f1_4, after f1_3, 2d
+    Sistema de Logging     :done, f1_5, after f1_4, 2d
+    Architect Agent        :done, f1_6, after f1_5, 3d
+    
+    section Fase 2
+    Code Generator         :done, f2_1, after f1_6, 3d
+    Code Analyzer         :done, f2_2, after f2_1, 3d
+    Test Runner           :done, f2_3, after f2_2, 3d
+    Security Scanner      :done, f2_4, after f2_3, 3d
+    Workflow Manager      :done, f2_5, after f2_4, 2d
+    Task Scheduler        :done, f2_6, after f2_5, 2d
+    
+    section Fase 3
+    WPF Agent             :done, f3_1, after f2_6, 3d
+    UI/UX Agent           :done, f3_2, after f3_1, 3d
+    Database Agent        :done, f3_3, after f3_2, 3d
+    API Agent             :done, f3_4, after f3_3, 3d
+    Ferramentas Específicas :done, f3_5, after f3_4, 4d
+    Templates            :active, f3_6, after f3_5, 3d

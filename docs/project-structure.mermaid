@@ -1,0 +1,28 @@
+graph TD
+    A[Kallista Platform] --> B[Core Components]
+    A --> C[Tools]
+    A --> D[Agents]
+    
+    B --> B1[State Manager]
+    B --> B2[Memory Manager]
+    B --> B3[Context Manager]
+    B --> B4[Agent Communicator]
+    B --> B5[Logger]
+    
+    C --> C1[Code Generator]
+    C --> C2[Code Analyzer]
+    C --> C3[Test Runner]
+    C --> C4[Security Scanner]
+    
+    D --> D1[Architect Agent]
+    D --> D2[Development Agent]
+    D --> D3[Testing Agent]
+    
+    classDef implemented fill:#90EE90
+    classDef inProgress fill:#FFD700
+    classDef planned fill:#FF9999
+    
+    class B1,B2,B3,B4,B5 implemented
+    class C1,C2,C3,C4 inProgress
+    class D1 implemented
+    class D2,D3 planned
