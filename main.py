@@ -1,44 +1,58 @@
 from crewai import Agent, Task, Crew
-from langchain.llms import OpenAI
-from agents.specialized.wpf_agent import WPFAgent
+from typing import Dict, List
+import asyncio
+
+# Importa os agentes
+from agents.core.architect_agent import ArchitectAgent
+from agents.specialized.wpf_agent import WpfAgent
+from agents.specialized.uiux_agent import UiUxAgent
 from agents.specialized.database_agent import DatabaseAgent
-from agents.specialized.security_agent import SecurityAgent
-from agents.specialized.api_agent import APIAgent
-from agents.specialized.uiux_agent import UIUXAgent
-from agents.core.architec_agent import ArchitectAgent
+from agents.specialized.api_agent import ApiAgent
+
+def create_agents(llm):
+    """Cria os agentes necessários"""
+    return {
+        'architect': ArchitectAgent(llm),
+        'wpf': WpfAgent(llm),
+        'uiux': UiUxAgent(llm),
+        'database': DatabaseAgent(llm),
+        'api': ApiAgent(llm)
+    }
+
+def create_tasks(agents: Dict[str, Agent]) -> List[Task]:
+    """Cria as tarefas para os agentes"""
+    return [
+        Task(
+            description="Setup Project Architecture",
+            agent=agents['architect'],
+            expected_output="Project structure and patterns definition"
+        ),
+        Task(
+            description="Design WPF Interface",
+            agent=agents['wpf'],
+            expected_output="WPF interface implementation"
+        )
+        # Adicionar mais tarefas conforme necessário
+    ]
 
 def main():
-    try:
-        # Inicializar os agentes
-        architect = ArchitectAgent()
-        wpf_agent = WPFAgent()
-        database_agent = DatabaseAgent()
-        security_agent = SecurityAgent()
-        api_agent = APIAgent()
-        uiux_agent = UIUXAgent()
+    # Configurar LLM
+    llm = ...  # Configurar o modelo de linguagem
 
-        print("Kallista - Sistema de Desenvolvimento WPF")
-        print("Inicializando agentes...")
-        
-        # Criar a crew com os agentes
-        crew = Crew(
-            agents=[
-                architect,
-                wpf_agent,
-                database_agent,
-                security_agent,
-                api_agent,
-                uiux_agent
-            ]
-        )
+    # Criar agentes
+    agents = create_agents(llm)
 
-        print("Sistema inicializado com sucesso!")
-        print("\nAgentes disponíveis:")
-        for agent in crew.agents:
-            print(f"- {agent.__class__.__name__}")
+    # Criar tarefas
+    tasks = create_tasks(agents)
 
-    except Exception as e:
-        print(f"Erro ao inicializar o sistema: {str(e)}")
+    # Criar crew
+    crew = Crew(
+        agents=list(agents.values()),
+        tasks=tasks
+    )
+
+    # Executar
+    result = crew.kickoff()
 
 if __name__ == "__main__":
     main()
