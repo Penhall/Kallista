@@ -3,7 +3,7 @@ from typing import Dict, List
 import asyncio
 
 # Importa os agentes
-from agents.core.architect_agent import ArchitectAgent
+from agents.core.architect_agent  import ArchitectAgent
 from agents.specialized.wpf_agent import WpfAgent
 from agents.specialized.uiux_agent import UiUxAgent
 from agents.specialized.database_agent import DatabaseAgent

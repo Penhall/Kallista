@@ -6,5 +6,7 @@ core/__init__.py
 kallista.egg-info/PKG-INFO
 kallista.egg-info/SOURCES.txt
 kallista.egg-info/dependency_links.txt
+kallista.egg-info/entry_points.txt
+kallista.egg-info/requires.txt
 kallista.egg-info/top_level.txt
 tests/__init__.py

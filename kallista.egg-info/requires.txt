@@ -1,0 +1,13 @@
+crewai
+langchain
+openai
+python-dotenv
+aiohttp
+jinja2
+networkx
+pandas
+numpy
+keyring
+cryptography
+pyyaml
+semver

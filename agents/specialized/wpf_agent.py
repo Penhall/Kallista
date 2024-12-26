@@ -14,8 +14,12 @@ class WpfAgent(Agent):
             responsive and user-friendly interfaces following MVVM pattern.""",
             llm=llm
         )
-        self.templates_path = Path("templates/wpf")
-        self.templates_path.mkdir(parents=True, exist_ok=True)
+              # Mudança aqui: templates_path -> _templates_path
+        self._templates_path = Path("templates/wpf")
+        self._templates_path.mkdir(parents=True, exist_ok=True)
+        
+        self._templates_path = Path("templates/wpf")
+        self._templates_path.mkdir(parents=True, exist_ok=True)
 
     async def design_interface(self, requirements: Dict) -> Dict[str, Any]:
         """Design a WPF interface based on requirements"""
@@ -162,7 +166,7 @@ class WpfAgent(Agent):
 
     def _load_template(self, template_name: str) -> str:
         """Load a XAML template from file"""
-        template_file = self.templates_path / template_name
+        template_file = self._templates_path / template_name
         if template_file.exists():
             return template_file.read_text()
         return ""
