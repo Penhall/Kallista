@@ -1,6 +1,11 @@
 from crewai import Agent, Task, Crew
+from dotenv import load_dotenv
+import os
 from typing import Dict, List
 import asyncio
+
+
+from langchain_openai import ChatOpenAI
 
 # Importa os agentes
 from agents.core.architect_agent  import ArchitectAgent
@@ -9,6 +14,10 @@ from agents.specialized.uiux_agent import UiUxAgent
 from agents.specialized.database_agent import DatabaseAgent
 from agents.specialized.api_agent import ApiAgent
 
+
+
+
+load_dotenv()
 def create_agents(llm):
     """Cria os agentes necessários"""
     return {
@@ -37,7 +46,10 @@ def create_tasks(agents: Dict[str, Agent]) -> List[Task]:
 
 def main():
     # Configurar LLM
-    llm = ...  # Configurar o modelo de linguagem
+    llm = ChatOpenAI(
+        model="gpt-4",
+        openai_api_key=os.getenv("OPENAI_API_KEY")
+    )
 
     # Criar agentes
     agents = create_agents(llm)
@@ -50,6 +62,8 @@ def main():
         agents=list(agents.values()),
         tasks=tasks
     )
+    
+  
 
     # Executar
     result = crew.kickoff()

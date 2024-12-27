@@ -16,8 +16,8 @@ class ApiAgent(Agent):
             clean architecture.""",
             llm=llm
         )
-        self.templates_path = Path("templates/api")
-        self.templates_path.mkdir(parents=True, exist_ok=True)
+        self._templates_path = Path("templates/api")
+        self._templates_path.mkdir(parents=True, exist_ok=True)
 
     async def design_service_layer(self, requirements: Dict) -> Dict[str, Any]:
         """Design service layer architecture"""
@@ -230,14 +230,51 @@ class ApiAgent(Agent):
 
     def save_api_design(self, design: Dict) -> None:
         """Save API design for reuse"""
-        design_file = self.templates_path / f"{design['name']}.json"
+        design_file = self._templates_path / f"{design['name']}.json"
         with open(design_file, 'w') as f:
             json.dump(design, f, indent=4)
 
     def load_api_design(self, design_name: str) -> Optional[Dict]:
         """Load a saved API design"""
-        design_file = self.templates_path / f"{design_name}.json"
+        design_file = self._templates_path / f"{design_name}.json"
         if design_file.exists():
             with open(design_file, 'r') as f:
                 return json.load(f)
-        return None
+        return None       
+
+
+    def _define_exception_handlers(self):
+        """Define os handlers de exceção"""
+        return [
+            {
+                'type': 'ValidationException',
+                'handler': 'ValidationExceptionHandler',
+                'priority': 1
+            },
+            {
+                'type': 'BusinessException',
+                'handler': 'BusinessExceptionHandler',
+                'priority': 2
+            },
+            {
+                'type': 'SystemException',
+                'handler': 'SystemExceptionHandler',
+                'priority': 3
+            }
+        ]
+
+    def _define_logging_config(self):
+        """Define configurações de logging"""
+        return {
+            'level': 'Information',
+            'providers': ['Console', 'File'],
+            'format': '{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}'
+        }
+
+    def _get_validators_list(self):
+        """Retorna lista de validadores"""
+        return [
+            'RequestValidator',
+            'BusinessRulesValidator',
+            'SecurityValidator'
+        ]

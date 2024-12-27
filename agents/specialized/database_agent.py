@@ -16,8 +16,8 @@ class DatabaseAgent(Agent):
             data access patterns.""",
             llm=llm
         )
-        self.schema_path = Path("templates/database")
-        self.schema_path.mkdir(parents=True, exist_ok=True)
+        self._schema_path = Path("templates/database")
+        self._schema_path.mkdir(parents=True, exist_ok=True)
 
     async def design_database_schema(self, requirements: Dict) -> Dict[str, Any]:
         """Design database schema based on requirements"""
@@ -228,14 +228,64 @@ namespace YourNamespace.Migrations
 
     def save_schema(self, schema: Dict) -> None:
         """Save database schema for reuse"""
-        schema_file = self.schema_path / f"{schema['name']}.json"
+        schema_file = self._schema_path / f"{schema['name']}.json"
         with open(schema_file, 'w') as f:
             json.dump(schema, f, indent=4)
 
     def load_schema(self, schema_name: str) -> Optional[Dict]:
         """Load a saved database schema"""
-        schema_file = self.schema_path / f"{schema_name}.json"
+        schema_file = self._schema_path / f"{schema_name}.json"
         if schema_file.exists():
             with open(schema_file, 'r') as f:
                 return json.load(f)
         return None
+        
+# agents/specialized/database_agent.py
+# ... (código existente) ...
+
+    def _define_constraints(self, requirements: Dict) -> List[Dict]:
+        """Define restrições do banco de dados"""
+        return [
+            {
+                'type': 'unique',
+                'table': table['name'],
+                'columns': table.get('unique_columns', []),
+                'name': f"UQ_{table['name']}_{'_'.join(table.get('unique_columns', []))}"
+            }
+            for table in requirements.get('tables', [])
+        ]
+
+    def _define_indices(self, requirements: Dict) -> List[Dict]:
+        """Define índices do banco de dados"""
+        indices = []
+        for table in requirements.get('tables', []):
+            for index in table.get('indices', []):
+                indices.append({
+                    'table': table['name'],
+                    'name': f"IX_{table['name']}_{index['name']}",
+                    'columns': index['columns'],
+                    'unique': index.get('unique', False),
+                    'clustered': index.get('clustered', False)
+                })
+        return indices
+
+    def _validate_schema(self, requirements: Dict) -> Dict:
+        """Valida o schema do banco de dados"""
+        issues = []
+        warnings = []
+
+        # Validações básicas
+        if not requirements.get('tables'):
+            issues.append("No tables defined in schema")
+
+        for table in requirements.get('tables', []):
+            if not table.get('columns'):
+                issues.append(f"No columns defined for table {table['name']}")
+            if not any(col.get('primary_key') for col in table.get('columns', [])):
+                warnings.append(f"No primary key defined for table {table['name']}")
+
+        return {
+            'valid': len(issues) == 0,
+            'issues': issues,
+            'warnings': warnings
+        }
