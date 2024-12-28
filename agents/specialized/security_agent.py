@@ -13,13 +13,12 @@ class SecurityAgent(Agent):
             You excel at identifying vulnerabilities and implementing secure coding practices.""",
             llm=llm
         )
-        self.vulnerability_scanner = None
-        self.code_sanitizer = None
-        self.compliance_checker = None
 
-    async def analyze_security(self, project_path: Path) -> Dict:
-        """Realiza análise completa de segurança"""
+    async def analyze_security(self, structure: Dict) -> Dict:
+        """Analisa segurança do projeto"""
         try:
+            project_path = Path(structure['metadata'].get('path', '.'))
+            
             results = {
                 'vulnerabilities': [],
                 'code_quality': [],
@@ -28,226 +27,210 @@ class SecurityAgent(Agent):
                 'timestamp': datetime.utcnow().isoformat()
             }
 
-            # Análise de vulnerabilidades
-            vuln_results = await self._scan_vulnerabilities(project_path)
-            results['vulnerabilities'] = vuln_results
-
-            # Análise de qualidade de código
-            quality_results = await self._analyze_code_quality(project_path)
-            results['code_quality'] = quality_results
-
-            # Verificação de compliance
-            compliance_results = await self._check_compliance(project_path)
-            results['compliance'] = compliance_results
-
-            # Análise de dependências
-            dependency_results = await self._analyze_dependencies(project_path)
-            results['dependencies'] = dependency_results
+            results['vulnerabilities'] = await self._check_vulnerabilities(project_path, structure)
+            results['code_quality'] = await self._analyze_code_quality(project_path, structure)
+            results['compliance'] = await self._check_compliance(structure)
+            results['dependencies'] = await self._check_dependencies(structure)
 
             return results
-
         except Exception as e:
-            print(f"Security analysis failed: {str(e)}")
-            return results
+            print(f"Erro na análise de segurança: {str(e)}")
+            return {}
 
-    async def _scan_vulnerabilities(self, project_path: Path) -> List[Dict]:
-        """Analisa vulnerabilidades no código"""
-        try:
-            results = []
-            
-            # Análise de padrões conhecidos
-            pattern_results = await self._scan_security_patterns(project_path)
-            results.extend(pattern_results)
-            
-            # Análise de configurações
-            config_results = await self._analyze_security_configs(project_path)
-            results.extend(config_results)
-            
-            # Análise de endpoints
-            endpoint_results = await self._analyze_endpoints(project_path)
-            results.extend(endpoint_results)
-            
-            return results
-            
-        except Exception as e:
-            print(f"Vulnerability scan failed: {str(e)}")
-            return []
+    async def _check_vulnerabilities(self, project_path: Path, structure: Dict) -> List[Dict]:
+        """Verifica vulnerabilidades de segurança"""
+        vulnerabilities = []
 
-    async def _analyze_code_quality(self, project_path: Path) -> List[Dict]:
+        # Verificar injeção SQL
+        if structure.get('database', {}).get('type') == 'SQL':
+            vulnerabilities.append({
+                'type': 'SQL Injection',
+                'severity': 'High',
+                'recommendation': 'Use parameterized queries or an ORM',
+                'mitigation': self._get_sql_injection_mitigation()
+            })
+
+        # Verificar XSS
+        if structure.get('features', {}).get('user_input'):
+            vulnerabilities.append({
+                'type': 'Cross-site Scripting (XSS)',
+                'severity': 'Medium',
+                'recommendation': 'Validate and encode all user input',
+                'mitigation': self._get_xss_mitigation()
+            })
+
+        # Verificar autenticação
+        auth_config = structure.get('features', {}).get('authentication', {})
+        if auth_config:
+            vulnerabilities.extend(self._check_auth_vulnerabilities(auth_config))
+
+        return vulnerabilities
+
+    async def _analyze_code_quality(self, project_path: Path, structure: Dict) -> List[Dict]:
         """Analisa qualidade do código sob perspectiva de segurança"""
-        try:
-            results = []
-            
-            # Análise de complexidade
-            complexity_results = await self._analyze_complexity(project_path)
-            results.extend(complexity_results)
-            
-            # Análise de práticas seguras
-            practice_results = await self._analyze_security_practices(project_path)
-            results.extend(practice_results)
-            
-            # Análise de logs e erros
-            logging_results = await self._analyze_logging(project_path)
-            results.extend(logging_results)
-            
-            return results
-            
-        except Exception as e:
-            print(f"Code quality analysis failed: {str(e)}")
-            return []
+        quality_issues = []
 
-    async def _check_compliance(self, project_path: Path) -> List[Dict]:
+        # Verificar práticas de codificação segura
+        quality_issues.extend(self._check_secure_coding_practices(structure))
+
+        # Verificar gestão de erros
+        if 'error_handling' in structure.get('features', {}):
+            quality_issues.extend(self._check_error_handling(structure))
+
+        # Verificar logging
+        if 'logging' in structure.get('features', {}):
+            quality_issues.extend(self._check_logging_practices(structure))
+
+        return quality_issues
+
+    async def _check_compliance(self, structure: Dict) -> List[Dict]:
         """Verifica conformidade com padrões de segurança"""
-        try:
-            results = []
-            
-            # Verificação OWASP
-            owasp_results = await self._check_owasp_compliance(project_path)
-            results.extend(owasp_results)
-            
-            # Verificação GDPR
-            gdpr_results = await self._check_gdpr_compliance(project_path)
-            results.extend(gdpr_results)
-            
-            # Verificação PCI
-            pci_results = await self._check_pci_compliance(project_path)
-            results.extend(pci_results)
-            
-            return results
-            
-        except Exception as e:
-            print(f"Compliance check failed: {str(e)}")
-            return []
+        compliance_results = []
 
-    async def _analyze_dependencies(self, project_path: Path) -> List[Dict]:
-        """Analisa segurança das dependências"""
-        try:
-            results = []
-            
-            # Análise de versões
-            version_results = await self._analyze_dependency_versions(project_path)
-            results.extend(version_results)
-            
-            # Análise de licenças
-            license_results = await self._analyze_licenses(project_path)
-            results.extend(license_results)
-            
-            # Análise de CVEs
-            cve_results = await self._analyze_cves(project_path)
-            results.extend(cve_results)
-            
-            return results
-            
-        except Exception as e:
-            print(f"Dependency analysis failed: {str(e)}")
-            return []
+        # OWASP Top 10
+        compliance_results.extend(self._check_owasp_compliance())
 
-    def _analyze_endpoints(self, project_path: Path) -> List[Dict]:
-        """Analisa segurança dos endpoints"""
-        return [
+        # GDPR (se aplicável)
+        if structure.get('features', {}).get('data_protection'):
+            compliance_results.extend(self._check_gdpr_compliance())
+
+        return compliance_results
+
+    async def _check_dependencies(self, structure: Dict) -> List[Dict]:
+        """Verifica segurança das dependências"""
+        dependency_results = []
+
+        # Verificar versões das dependências
+        packages = structure.get('dependencies', {}).get('packages', [])
+        for package in packages:
+            dependency_results.extend(self._check_package_security(package))
+
+        return dependency_results
+
+    def _get_sql_injection_mitigation(self) -> Dict:
+        """Retorna mitigação para SQL Injection"""
+        return {
+            'code_example': '''
+            // Use Entity Framework
+            using (var context = new AppDbContext())
             {
-                'endpoint': '/api/auth',
-                'vulnerabilities': ['rate-limiting', 'input-validation'],
-                'severity': 'medium'
+                var user = context.Users
+                    .Where(u => u.Username == username)
+                    .FirstOrDefault();
             }
-        ]
+            ''',
+            'description': 'Use Entity Framework ou parâmetros para prevenir SQL Injection'
+        }
 
-    def _analyze_complexity(self, project_path: Path) -> List[Dict]:
-        """Analisa complexidade do código"""
-        return [
-            {
-                'file': 'Program.cs',
-                'metrics': {
-                    'cyclomatic_complexity': 5,
-                    'cognitive_complexity': 3
+    def _get_xss_mitigation(self) -> Dict:
+        """Retorna mitigação para XSS"""
+        return {
+            'code_example': '''
+            // Encode output
+            using System.Web;
+            string encodedValue = HttpUtility.HtmlEncode(userInput);
+            ''',
+            'description': 'Sempre encode dados de entrada do usuário'
+        }
+
+    def _check_auth_vulnerabilities(self, auth_config: Dict) -> List[Dict]:
+        """Verifica vulnerabilidades de autenticação"""
+        return [{
+            'type': 'Authentication',
+            'checks': [
+                {
+                    'name': 'Password Storage',
+                    'status': 'Warning',
+                    'recommendation': 'Use secure password hashing'
                 },
-                'recommendations': []
-            }
-        ]
+                {
+                    'name': 'Session Management',
+                    'status': 'Info',
+                    'recommendation': 'Implement proper session timeout'
+                }
+            ]
+        }]
 
-    def _check_owasp_compliance(self, project_path: Path) -> List[Dict]:
-        """Verifica conformidade com OWASP"""
-        return [
-            {
-                'category': 'Authentication',
-                'status': 'compliant',
-                'recommendations': []
-            }
-        ]
+    def _check_secure_coding_practices(self, structure: Dict) -> List[Dict]:
+        """Verifica práticas de codificação segura"""
+        return [{
+            'category': 'Secure Coding',
+            'issues': [
+                {
+                    'type': 'Input Validation',
+                    'severity': 'Medium',
+                    'recommendation': 'Implement comprehensive input validation'
+                },
+                {
+                    'type': 'Output Encoding',
+                    'severity': 'Medium',
+                    'recommendation': 'Encode all output to prevent XSS'
+                }
+            ]
+        }]
 
-    def _analyze_dependency_versions(self, project_path: Path) -> List[Dict]:
-        """Analisa versões das dependências"""
-        return [
-            {
-                'package': 'Microsoft.EntityFrameworkCore',
-                'version': '6.0.0',
-                'status': 'current',
-                'vulnerabilities': []
-            }
-        ]
+    def _check_error_handling(self, structure: Dict) -> List[Dict]:
+        """Verifica práticas de tratamento de erro"""
+        return [{
+            'category': 'Error Handling',
+            'issues': [
+                {
+                    'type': 'Exception Management',
+                    'severity': 'Medium',
+                    'recommendation': 'Implement global error handling'
+                }
+            ]
+        }]
 
-    def _check_gdpr_compliance(self, project_path: Path) -> List[Dict]:
+    def _check_logging_practices(self, structure: Dict) -> List[Dict]:
+        """Verifica práticas de logging"""
+        return [{
+            'category': 'Logging',
+            'issues': [
+                {
+                    'type': 'Sensitive Data',
+                    'severity': 'High',
+                    'recommendation': 'Avoid logging sensitive information'
+                }
+            ]
+        }]
+
+    def _check_owasp_compliance(self) -> List[Dict]:
+        """Verifica conformidade com OWASP Top 10"""
+        return [{
+            'standard': 'OWASP Top 10',
+            'checks': [
+                {
+                    'id': 'A01:2021',
+                    'name': 'Broken Access Control',
+                    'status': 'Review Required'
+                },
+                {
+                    'id': 'A02:2021',
+                    'name': 'Cryptographic Failures',
+                    'status': 'Review Required'
+                }
+            ]
+        }]
+
+    def _check_gdpr_compliance(self) -> List[Dict]:
         """Verifica conformidade com GDPR"""
-        return [
-            {
-                'category': 'Data Protection',
-                'status': 'compliant',
-                'recommendations': []
-            }
-        ]
+        return [{
+            'standard': 'GDPR',
+            'checks': [
+                {
+                    'article': 'Art. 32',
+                    'name': 'Security of Processing',
+                    'status': 'Review Required'
+                }
+            ]
+        }]
 
-    def _check_pci_compliance(self, project_path: Path) -> List[Dict]:
-        """Verifica conformidade com PCI"""
-        return [
-            {
-                'category': 'Data Security',
-                'status': 'compliant',
-                'recommendations': []
-            }
-        ]
-
-    def _analyze_licenses(self, project_path: Path) -> List[Dict]:
-        """Analisa licenças das dependências"""
-        return [
-            {
-                'package': 'Newtonsoft.Json',
-                'license': 'MIT',
-                'status': 'approved'
-            }
-        ]
-
-    def _analyze_cves(self, project_path: Path) -> List[Dict]:
-        """Analisa CVEs conhecidas"""
-        return [
-            {
-                'package': 'log4net',
-                'version': '2.0.12',
-                'cves': []
-            }
-        ]
-
-    def _scan_security_patterns(self, project_path: Path) -> List[Dict]:
-        """Analisa padrões de segurança conhecidos"""
-        patterns = [
-            {'pattern': r'password\s*=', 'severity': 'high', 'description': 'Hardcoded password'},
-            {'pattern': r'api_key\s*=', 'severity': 'high', 'description': 'Hardcoded API key'},
-            {'pattern': r'secret\s*=', 'severity': 'high', 'description': 'Hardcoded secret'}
-        ]
-        return []
-
-    def _analyze_security_configs(self, project_path: Path) -> List[Dict]:
-        """Analisa configurações de segurança"""
-        config_checks = [
-            {'file': 'web.config', 'check': 'debug', 'severity': 'medium'},
-            {'file': 'app.config', 'check': 'connectionStrings', 'severity': 'high'},
-            {'file': 'appsettings.json', 'check': 'Authentication', 'severity': 'high'}
-        ]
-        return []
-
-    def _analyze_security_practices(self, project_path: Path) -> List[Dict]:
-        """Analisa práticas de segurança"""
-        return []
-
-    def _analyze_logging(self, project_path: Path) -> List[Dict]:
-        """Analisa configurações de log"""
-        return []
+    def _check_package_security(self, package: Dict) -> List[Dict]:
+        """Verifica segurança de um pacote"""
+        return [{
+            'package': package.get('name'),
+            'version': package.get('version'),
+            'status': 'Check Required',
+            'recommendation': 'Verify package version for known vulnerabilities'
+        }]
