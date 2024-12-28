@@ -3,8 +3,10 @@
         "crewai",
         "dotenv",
         "dtos",
+        "Mvvm",
         "MVVM",
         "nullable",
+        "pathlib",
         "Segoe",
         "uiux"
     ]

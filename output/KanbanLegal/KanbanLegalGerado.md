@@ -1,0 +1,22 @@
+- KanbanLegal
+  - .vs
+    - KanbanLegal
+      - v17
+        - .suo
+        - DocumentLayout.json
+  - Infrastructure
+  - Models
+  - Properties
+    - AssemblyInfo.cs
+  - Resources
+  - Services
+  - Styles
+    - BaseStyles.xaml
+    - Theme.xaml
+  - ViewModels
+  - Views
+  - App.xaml
+  - App.xaml.cs
+  - generation_results.json
+  - KanbanLegal.csproj
+  - KanbanLegal.sln
