@@ -8,6 +8,7 @@ from agents.specialized.database_agent import DatabaseAgent
 from agents.specialized.security_agent import SecurityAgent
 from agents.specialized.uiux_agent import UiUxAgent
 from tools.wpf.project_generator import WPFProjectGenerator
+from analysis.agent_analyzer import AgentAnalyzer
 from datetime import datetime
 import os
 from dotenv import load_dotenv
@@ -16,23 +17,16 @@ from typing import Dict, List, Any
 import json
 
 class AgentIntegrator:
-    def __init__(self):        
-        print("\nVariáveis antes do load_dotenv:")
-        for key in os.environ:
-            if 'API' in key or 'KEY' in key:
-                value = os.environ[key]
-                print(f"{key}: {value[:10]}...")
-
-        env_path = Path('.env').absolute()
-        print(f"\nProcurando .env em: {env_path}")
-        print(f"Arquivo existe? {env_path.exists()}")
-        load_dotenv(env_path)
-        
-        print("\nVariáveis depois do load_dotenv:")
-        for key in os.environ:
-            if 'API' in key or 'KEY' in key:
-                value = os.environ[key]
-                print(f"{key}: {value[:10]}...")  
+    def __init__(self):
+        load_dotenv()
+        self.llm = ChatOpenAI(
+            model="gpt-4",
+            openai_api_key=os.getenv("OPENAI_API_KEY")
+        )
+        self.output_path = Path("output")
+        self.output_path.mkdir(exist_ok=True)
+        self.project_generator = WPFProjectGenerator()
+        self.agent_analyzer = AgentAnalyzer()  # Novo analisador
             
         self.llm = ChatOpenAI(
             model="gpt-4",
@@ -42,21 +36,25 @@ class AgentIntegrator:
         self.output_path.mkdir(exist_ok=True)
         self.project_generator = WPFProjectGenerator()
 
+    
     async def generate_project(self, project_structure: Dict):
         """Gera o projeto usando os agentes especializados"""
         print("\nIniciando geração com agentes...")
         try:
-            # Criar agentes
+            # Análise inicial com o novo analisador
+            analysis_result = await self.agent_analyzer.analyze_with_agents(project_structure)
+            print("\nAnálise de requisitos concluída...")
+
+            # Criar agentes com o contexto da análise
             agents = self._create_agents()
             
-            # Analisar requisitos
-            specs = {}
-            for agent_name, agent in agents.items():
-                print(f"\nProcessando {agent_name}...")
-                specs[agent_name] = await self._get_agent_specs(agent, project_structure)
+            # Criar e executar tarefas com contexto enriquecido
+            enriched_structure = {
+                **project_structure,
+                'analysis': analysis_result
+            }
             
-            # Criar e executar tarefas
-            tasks = self._create_tasks(agents, project_structure)
+            tasks = self._create_tasks(agents, enriched_structure)
             crew = Crew(agents=list(agents.values()), tasks=tasks)
             
             # Executar projeto
@@ -65,25 +63,55 @@ class AgentIntegrator:
             
             # Gerar código usando WPFProjectGenerator
             generation_result = await self.project_generator.generate_project(
-                self._merge_specs(project_structure, specs, str(results))
+                self._merge_specs(enriched_structure, results)
             )
             
             # Processar e salvar resultados
-            return await self._process_results(results, project_structure, generation_result)
+            return await self._process_results(results, enriched_structure, generation_result)
             
         except Exception as e:
             print(f"Erro na geração: {str(e)}")
             return None
 
-    def _create_agents(self) -> Dict:
-        """Cria instâncias dos agentes especializados"""
-        return {
-            'wpf': WpfAgent(self.llm),
-            'api': ApiAgent(self.llm),
-            'database': DatabaseAgent(self.llm),
-            'security': SecurityAgent(self.llm),
-            'uiux': UiUxAgent(self.llm)
-        }
+    def _create_tasks(self, agents: Dict, enriched_structure: Dict) -> List[Task]:
+        """Cria tarefas para os agentes com contexto enriquecido"""
+        project_name = enriched_structure['metadata']['name']
+        analysis = enriched_structure.get('analysis', {})
+        domain = analysis.get('domain_analysis', {}).get('primary_domain', 'generic')
+
+        return [
+            Task(
+                description=f"Design user interface and experience for {project_name} ({domain} application)",
+                agent=agents['uiux'],
+                expected_output="UI/UX specifications and guidelines",
+                context=analysis.get('agent_analyses', {}).get('uiux', {})
+            ),
+            Task(
+                description=f"Implement WPF interface for {project_name} ({domain} application)",
+                agent=agents['wpf'],
+                expected_output="WPF implementation details",
+                context=analysis.get('agent_analyses', {}).get('wpf', {})
+            ),
+            Task(
+                description=f"Design and implement database structure for {project_name}",
+                agent=agents['database'],
+                expected_output="Database schema and Entity Framework implementation",
+                context=analysis.get('agent_analyses', {}).get('database', {})
+            ),
+            Task(
+                description=f"Design and implement service layer for {project_name}",
+                agent=agents['api'],
+                expected_output="API specifications and implementation",
+                context=analysis.get('agent_analyses', {}).get('api', {})
+            ),
+            Task(
+                description=f"Analyze and implement security measures for {project_name}",
+                agent=agents['security'],
+                expected_output="Security analysis and recommendations",
+                context=analysis.get('agent_analyses', {}).get('security', {})
+            )
+        ]
+    
 
     async def _get_agent_specs(self, agent: Any, structure: Dict) -> Dict:
         """Obtém especificações de cada agente"""
@@ -99,20 +127,16 @@ class AgentIntegrator:
             return await agent.analyze_security(structure)
         return {}
 
-    def _merge_specs(self, structure: Dict, specs: Dict, agent_results: str) -> Dict:
-        """Mescla todas as especificações para geração"""
+    def _merge_specs(self, structure: Dict, results: Any) -> Dict:
+        """Mescla especificações com resultados da análise"""
         return {
             'metadata': structure['metadata'],
             'type': structure['type'],
             'features': structure.get('features', {}),
-            'ui_specs': specs.get('uiux', {}),
-            'wpf_specs': specs.get('wpf', {}),
-            'db_specs': specs.get('database', {}),
-            'api_specs': specs.get('api', {}),
-            'security_specs': specs.get('security', {}),
-            'agent_output': agent_results
+            'analysis': structure.get('analysis', {}),
+            'agent_results': str(results)
         }
-
+   
     def _create_tasks(self, agents: Dict, project_structure: Dict) -> List[Task]:
         """Cria tarefas para os agentes"""
         project_name = project_structure['metadata']['name']
@@ -228,3 +252,14 @@ class AgentIntegrator:
                 current_code.append(line)
 
         return code_samples
+    
+            
+    def _create_agents(self) -> Dict:
+        """Cria instâncias dos agentes especializados"""
+        return {
+            'wpf': WpfAgent(self.llm),
+            'api': ApiAgent(self.llm),
+            'database': DatabaseAgent(self.llm),
+            'security': SecurityAgent(self.llm),
+            'uiux': UiUxAgent(self.llm)
+        }
