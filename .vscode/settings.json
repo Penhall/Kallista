@@ -3,11 +3,15 @@
         "crewai",
         "dotenv",
         "dtos",
+        "mvvm",
         "Mvvm",
         "MVVM",
+        "nameof",
         "nullable",
         "pathlib",
         "Segoe",
-        "uiux"
+        "uiux",
+        "viewmodel",
+        "viewmodels"
     ]
 }

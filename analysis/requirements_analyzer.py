@@ -1,5 +1,6 @@
 # analysis/requirements_analyzer.py
 from typing import Dict, List, Any, Optional
+from .pattern_matcher import PatternMatcher
 from pathlib import Path
 import json
 
@@ -7,6 +8,7 @@ class RequirementsAnalyzer:
     def __init__(self):
         self.domain_patterns_path = Path("templates/domain_patterns")
         self.domain_patterns_path.mkdir(parents=True, exist_ok=True)
+        self.pattern_matcher = PatternMatcher()
         
         # Padrões conhecidos por domínio
         self.domain_patterns = {
@@ -242,34 +244,74 @@ class RequirementsAnalyzer:
                 return json.load(f)
         return None
         
-    def _get_architecture_recommendations(self, domain_analysis: Dict, technical: Dict) -> List[str]:
-            """Gera recomendações de arquitetura"""
-            recommendations = []
-            domain = domain_analysis['primary_domain']
-        
-            # Recomendações base para qualquer domínio
-            recommendations.append("Implementar arquitetura MVVM")
-            recommendations.append("Utilizar injeção de dependência")
-        
-            # Recomendações específicas por domínio
-            if domain == 'business':
-                recommendations.extend([
-                    "Implementar Repository Pattern para acesso a dados",
-                    "Usar Unit of Work para transações"
-                ])
-            elif domain == 'data_analysis':
-                recommendations.extend([
-                    "Implementar Observer Pattern para atualizações em tempo real",
-                    "Usar Strategy Pattern para diferentes visualizações"
-                ])
-            elif domain == 'workflow':
-                recommendations.extend([
-                    "Implementar State Pattern para gerenciamento de workflow",
-                    "Usar Command Pattern para operações reversíveis"
-                ])
+    def _get_architecture_recommendations(self, 
+                                    domain_analysis: Dict,
+                                    technical: Dict,
+                                    pattern_analysis: Dict = None) -> List[str]:
+        """Gera recomendações de arquitetura"""
+        recommendations = []
+        domain = domain_analysis.get('primary_domain', 'generic')
+    
+        # Recomendações base
+        recommendations.append("Implementar arquitetura MVVM")
+        recommendations.append("Utilizar injeção de dependência")
 
-            return recommendations
-
+        # Adicionar recomendações dos patterns se disponível
+        if pattern_analysis and 'recommendations' in pattern_analysis:
+            if isinstance(pattern_analysis['recommendations'], dict):
+                arch_recommendations = pattern_analysis['recommendations'].get('architectural', [])
+                if arch_recommendations:
+                    recommendations.extend(arch_recommendations)
+    
+        # Recomendações específicas por domínio
+        if domain == 'business':
+            recommendations.extend([
+                "Implementar Repository Pattern para acesso a dados",
+                "Usar Unit of Work para transações"
+            ])
+        elif domain == 'data_analysis':
+            recommendations.extend([
+                "Implementar Observer Pattern para atualizações em tempo real",
+                "Usar Strategy Pattern para diferentes visualizações"
+            ])
+        elif domain == 'workflow':
+            recommendations.extend([
+                "Implementar State Pattern para gerenciamento de workflow",
+                "Usar Command Pattern para operações reversíveis"
+            ])
+    
+        return recommendations
+   
+    def _combine_recommendations(self, 
+                           domain_analysis: Dict,
+                           pattern_analysis: Dict,
+                           technical_requirements: Dict) -> Dict:
+        """Combina recomendações de todas as fontes"""
+        try:
+            return {
+                'architecture': self._get_architecture_recommendations(
+                    domain_analysis,
+                    technical_requirements,
+                    pattern_analysis
+                ),
+                'ui': self._get_ui_recommendations(
+                    pattern_analysis.get('matches', {}).get('ui', []),
+                    technical_requirements
+                ),
+                'implementation': self._get_implementation_recommendations(
+                    pattern_analysis.get('matches', {}).get('architectural', []),
+                    technical_requirements
+                )
+            }
+        except Exception as e:
+            print(f"Erro ao combinar recomendações: {str(e)}")
+            return {
+                'architecture': [],
+                'ui': [],
+                'implementation': []
+            }
+       
+   
     def _get_ui_recommendations(self, patterns: List[Dict], technical: Dict) -> List[str]:
         """Gera recomendações de UI"""
         recommendations = []
