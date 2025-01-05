@@ -2,11 +2,12 @@
 class BaseViewModelTemplate:
     @staticmethod
     def implementation(project_name: str) -> str:
-        return f'''using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using System.ComponentModel;
-using System.Threading.Tasks;
-using {project_name}.Services.Navigation;
+        return f'''using System;
+            using System.Threading.Tasks;
+            using System.ComponentModel;
+            using CommunityToolkit.Mvvm.ComponentModel;
+            using CommunityToolkit.Mvvm.Input;
+            using {project_name}.Services.Navigation;
 
 namespace {project_name}.ViewModels
 {{
